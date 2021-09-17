@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Pulse Loader for React Native",
   "main": "PulseLoader.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/null-none/react-native-image-pulse.git"
