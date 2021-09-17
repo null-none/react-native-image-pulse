@@ -3,10 +3,10 @@ import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 
 const { height, width } = Dimensions.get('window');
 
-export default class Pulse extends React.Component {
+export default class Pulse extends Component {
 	constructor(props) {
 		super(props);
-	
+
 		this.anim = new Animated.Value(0);
 	}
 
@@ -21,14 +21,14 @@ export default class Pulse extends React.Component {
 	}
 
 	render() {
-		const { size, pulseMaxSize, borderColor, backgroundColor, getStyle } = this.props;
+		const { size, pulseMaxSize, borderColor, backgroundColor, getStyle, parentWidth, parentHeight } = this.props;
 
 		return (
 			<View style={[styles.circleWrapper, {
 				width: pulseMaxSize,
 				height: pulseMaxSize,
-				marginLeft: -pulseMaxSize/2,
-				marginTop: -pulseMaxSize/2,
+				left: parentWidth/2 - pulseMaxSize/2,
+				top: parentHeight/2 - pulseMaxSize/2
 			}]}>
 				<Animated.View
 					style={[styles.circle, {
@@ -51,7 +51,7 @@ export default class Pulse extends React.Component {
 				/>
 			</View>
 		);
-	}	
+	}
 }
 
 
@@ -59,9 +59,7 @@ const styles = StyleSheet.create({
 	circleWrapper: {
 		justifyContent: 'center',
 		alignItems: 'center',
-		position: 'absolute',
-		left: width/2,
-		top: height/2,
+		position: 'absolute'
 	},
 	circle: {
 		borderWidth: 4 * StyleSheet.hairlineWidth,

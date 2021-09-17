@@ -1,120 +1,183 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { View, Image, TouchableOpacity, Animated, Easing } from 'react-native';
-import Pulse from './Pulse';
+import React, { Component } from 'react'
+import { View, Image, TouchableOpacity, Animated, Easing } from 'react-native'
+import Pulse from './Pulse'
+import PropTypes from 'prop-types'
 
+export default class LocationPulseLoader extends Component {
+	static PropTypes = {
+	  interval: PropTypes.number,
+	  size: PropTypes.number,
+	  pulseMaxSize: PropTypes.number,
+	  avatar: PropTypes.any.isRequired,
+	  avatarBackgroundColor: PropTypes.string,
+	  pressInValue: PropTypes.number,
+	  pressDuration: PropTypes.number,
+	  borderColor: PropTypes.string,
+	  backgroundColor: PropTypes.string,
+	  getStyle: PropTypes.func,
+		autoPress: PropTypes.boolean,
+		autoPressInterval: PropTypes.number,
+		imageRotate: PropTypes.boolean
+	}
 
-export default class LocationPulseLoader extends React.Component {
+	static defaultProps = {
+	  interval: 2000,
+	  size: 100,
+	  pulseMaxSize: 250,
+	  avatar: undefined,
+	  avatarBackgroundColor: 'white',
+	  pressInValue: 0.8,
+	  pressDuration: 150,
+	  pressInEasing: Easing.in,
+	  pressOutEasing: Easing.in,
+	  borderColor: '#D8335B',
+	  backgroundColor: '#ED225B55',
+	  getStyle: undefined,
+		autoPress: true,
+		autoPressInterval: 500,
+		imageRotate: true
+	}
+
 	constructor(props) {
-		super(props);
-	
+		super(props)
+
 		this.state = {
 			circles: []
-		};
+		}
 
-		this.counter = 1;
-		this.setInterval = null;
-		this.anim = new Animated.Value(1);
+		this.counter = 1
+		this.anim = new Animated.Value(1)
+		this.spinValue = new Animated.Value(0)
 	}
 
 	componentDidMount() {
-		this.setCircleInterval();
+		this.setCircleInterval()
+		if (this.props.autoPress === true) {
+			this.setAutoPress()
+		}
+		if (this.props.imageRotate === true) {
+			this.startRotate()
+		}
+	}
+
+	componentWillUnmount() {
+		this.unmounted = true
+		clearInterval(this.intervalAnimated)
+		clearInterval(this.intervalAuto)
+	}
+
+	startRotate = () => {
+		Animated.sequence([
+			Animated.timing(this.spinValue, {
+	      toValue: 1,
+	      duration: 3000,
+	      easing: Easing.linear,
+	      useNativeDriver: false
+	    }),
+			Animated.timing(this.spinValue, {
+	      toValue: 0,
+	      duration: 0,
+	      useNativeDriver: false
+	    })
+	  ]).start(() => {
+	    this.startRotate()
+	  })
 	}
 
 	setCircleInterval() {
-		this.setInterval = setInterval(this.addCircle.bind(this), this.props.interval);
-		this.addCircle();
+		if (this.unmounted === true) {
+			return
+		}
+		clearInterval(this.intervalAnimated)
+		this.intervalAnimated = setInterval(this.addCircle.bind(this), this.props.interval)
+		this.addCircle()
 	}
 
 	addCircle() {
-		this.setState({ circles: [...this.state.circles, this.counter] });
-		this.counter++;
+		this.setState({ circles: [...this.state.circles, this.counter] })
+		this.counter++
 	}
 
-	onPressIn() {
+	onPressIn = () => {
 		Animated.timing(this.anim, {
 			toValue: this.props.pressInValue,
 			duration: this.props.pressDuration,
 			easing: this.props.pressInEasing,
 			useNativeDriver: false
-		}).start(() => clearInterval(this.setInterval));
+		}).start(() => clearInterval(this.intervalAnimated))
 	}
 
-	onPressOut() {
+	onPressOut = () => {
 		Animated.timing(this.anim, {
 			toValue: 1,
 			duration: this.props.pressDuration,
 			easing: this.props.pressOutEasing,
-		}).start(this.setCircleInterval.bind(this));
+			useNativeDriver: false
+		}).start(this.setCircleInterval.bind(this))
 	}
 
+	setAutoPress = () => {
+		clearInterval(this.intervalAuto)
+		this.intervalAuto = setInterval(() => {
+			this.onPressIn()
+			this.onPressOut()
+		}, this.props.autoPressInterval)
+	}
+
+	onPageLayout = (event) => {
+    const { width, height } = event.nativeEvent.layout
+    this.setState({ width, height, finish: true })
+  }
+
 	render() {
-		const { size, avatar, avatarBackgroundColor, interval } = this.props;
+		const { size, avatar, avatarBackgroundColor, interval } = this.props
+		const { finish, circles, width, height } = this.state
+
+		const spin = this.spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg']
+    })
 
 		return (
-			<View style={{
-				flex: 1,
-				backgroundColor: 'transparent',
-				justifyContent: 'center',
-				alignItems: 'center',
-			}}>
-				{this.state.circles.map((circle) => (
+			<View
+				onLayout={this.onPageLayout}
+				style={{
+					flex: 1,
+					backgroundColor: 'transparent',
+					justifyContent: 'center',
+					alignItems: 'center',
+				}}>
+				{finish && circles.map((circle) => (
 					<Pulse
 						key={circle}
+						parentWidth={width}
+						parentHeight={height}
 						{...this.props}
 					/>
 				))}
 
 				<TouchableOpacity
 					activeOpacity={1}
-					onPressIn={this.onPressIn.bind(this)}
-					onPressOut={this.onPressOut.bind(this)}
+					onPressIn={this.onPressIn}
+					onPressOut={this.onPressOut}
 					style={{
 						transform: [{
 							scale: this.anim
 						}]
 					}}
 				>
-					<Image
-						source={{ uri: avatar }}
+					<Animated.Image
+						source={avatar}
 						style={{
 							width: size,
 							height: size,
 							borderRadius: size/2,
-							backgroundColor: avatarBackgroundColor
+							backgroundColor: avatarBackgroundColor,
+							transform: [{ rotate: spin }]
 						}}
 					/>
 				</TouchableOpacity>
 			</View>
-		);
-	}	
+		)
+	}
 }
-
-LocationPulseLoader.propTypes = {
-  interval: PropTypes.number,
-  size: PropTypes.number,
-  pulseMaxSize: PropTypes.number,
-  avatar: PropTypes.string.isRequired,
-  avatarBackgroundColor: PropTypes.string,
-  pressInValue: PropTypes.number,
-  pressDuration: PropTypes.number,
-  borderColor: PropTypes.string,
-  backgroundColor: PropTypes.string,
-  getStyle: PropTypes.func,
-};
-
-LocationPulseLoader.defaultProps = {
-  interval: 2000,
-  size: 100,
-  pulseMaxSize: 250,
-  avatar: undefined,
-  avatarBackgroundColor: 'white',
-  pressInValue: 0.8,
-  pressDuration: 150,
-  pressInEasing: Easing.in,
-  pressOutEasing: Easing.in,
-  borderColor: '#D8335B',
-  backgroundColor: '#ED225B55',
-  getStyle: undefined,
-};
-
