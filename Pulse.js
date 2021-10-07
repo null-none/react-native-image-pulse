@@ -15,8 +15,8 @@ export default class Pulse extends Component {
 			toValue: 1,
 			duration: this.props.interval,
 			easing: Easing.in,
-			useNativeDriver: false
-		})
+			useNativeDriver: false,
+	})
 		.start();
 	}
 
