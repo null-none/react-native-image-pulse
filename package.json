@@ -1,6 +1,6 @@
 {
   "name": "react-native-image-pulse",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Pulse Loader for React Native",
   "main": "PulseLoader.js",
   "repository": {
